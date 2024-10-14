@@ -37,7 +37,7 @@ def ventana_principal():
     menubuscar = Menu(menu, tearoff=0)
     menubuscar.add_command(label="Denominación", command=buscar_denominacion)
     menubuscar.add_command(label="Precio", command=buscar_precio)
-    menubuscar.add_command(label="Géneros", command=raiz.quit)
+    menubuscar.add_command(label="Uvas", command=buscar_uvas)
     menu.add_cascade(label="Buscar", menu=menubuscar)
 
     raiz.config(menu=menu)
@@ -135,6 +135,21 @@ def formato_vinos(cursor):
     lb.pack(side=LEFT, fill=BOTH)
     sc.config(command=lb.yview)
     
+def formato_vinos_uvas(cursor): 
+    v = Toplevel()
+    sc = Scrollbar(v)
+    sc.pack(side=RIGHT, fill=Y)
+    lb = Listbox(v, width=150, yscrollcommand=sc.set)
+    for row in cursor:
+        s = 'VINO: ' + row[0]
+        lb.insert(END, s)
+        lb.insert(END, "------------------------------------------------------------------------")
+        s = "     TIPOS DE UVA: " + str(row[1])
+        lb.insert(END, s)
+        lb.insert(END, "\n\n")
+    lb.pack(side=LEFT, fill=BOTH)
+    sc.config(command=lb.yview)
+    
     
 def buscar_denominacion():
 
@@ -152,6 +167,8 @@ def buscar_denominacion():
     denominaciones = [i[0] for i in cursor]
         
     v = Toplevel()
+    label = Label(v, text="Seleccione la denominación: ")
+    label.pack(side=LEFT)
     sb = Spinbox(v, values=denominaciones)
     sb.bind("<Return>", lista)
     sb.pack()
@@ -174,6 +191,30 @@ def buscar_precio():
     entry = Entry(ventana)
     entry.bind("<Return>", listar)
     entry.pack(side=LEFT)
+
+    
+def buscar_uvas():
+
+    def listar(event):
+            conn = sqlite3.connect('vinos.db')
+            conn.text_factory = str
+            cursor = conn.execute("SELECT NOMBRE, UVAS FROM VINO where UVAS LIKE '%" + str(uvas.get()) + "%'")
+            conn.close
+            formato_vinos_uvas(cursor)
+    
+    conn = sqlite3.connect('vinos.db')
+    conn.text_factory = str
+    cursor = conn.execute("SELECT NOMBRE FROM UVAS")
+    
+    uvas = [i[0] for i in cursor]
+        
+    v = Toplevel()
+    label = Label(v, text="Seleccione el tipo de uva: ")
+    label.pack(side=LEFT)
+    uvas = Spinbox(v, width=30, values=uvas)
+    uvas.bind("<Return>", listar)
+    uvas.pack(side=LEFT)
+    conn.close()
   
 
 if __name__ == '__main__':
