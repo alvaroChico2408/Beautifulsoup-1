@@ -29,7 +29,7 @@ def ventana_principal():
 
     # DATOS
     menudatos = Menu(menu, tearoff=0)
-    menudatos.add_command(label="Cargar", command=raiz.quit)
+    menudatos.add_command(label="Cargar", command=almacenar_bd)
     menudatos.add_command(label="Listar", command=raiz.quit)
     menudatos.add_command(label="Salir", command=raiz.quit)
     menu.add_cascade(label="Datos", menu=menudatos)
@@ -69,14 +69,17 @@ def almacenar_bd():
     conn = sqlite3.connect('vinos.db')
     conn.text_factory = str
     conn.execute("DROP TABLE IF EXISTS VINO")
+    conn.execute("DROP TABLE IF EXISTS UVAS")
     conn.execute('''CREATE TABLE VINO
        (NOMBRE            TEXT NOT NULL,
         PRECIO        REAL        ,
         DENOMINACION      TEXT,
         BODEGA            TEXT,          
-        UVAS         TEXT,
-        GENEROS        TEXT);''')
+        UVAS         TEXT);''')
+    conn.execute('''CREATE TABLE UVAS
+       (NOMBRE            TEXT NOT NULL);''')
     
+    tipos_uva = set()
     lista_vinos= obtener_vinos_páginas()
     for vino in lista_vinos:
         datos= vino.find("div",class_="details")
@@ -86,11 +89,33 @@ def almacenar_bd():
             precio= list(precio.stripped_strings)[0]
         else:
             precio= list(vino.find("p",class_="price uniq small").stripped_strings)[0]
-        print(precio)
+        denominacion= datos.find("div",class_="region").string
+        partes= denominacion.split("(")
+        denominacion_buena= partes[0].strip()
+        bodega= datos.find("div",class_="cellar-name").string
+        uvas = "".join(datos.find("div", class_=["tags"]).stripped_strings)
+        for uva in uvas.split("/"):
+            tipos_uva.add(uva.strip())
+        
+        conn.execute("""INSERT INTO VINO (NOMBRE, PRECIO, DENOMINACION, BODEGA, UVAS) VALUES (?,?,?,?,?)""",
+                     (nombre, float(precio.replace(',', '.')), denominacion, bodega, uvas))
+    conn.commit()
+    
+    for u in list(tipos_uva):
+        conn.execute("""INSERT INTO UVAS (NOMBRE) VALUES (?)""",
+                     (u,))
+    conn.commit()
+    
+    cursor = conn.execute("SELECT COUNT(*) FROM VINO")
+    cursor1 = conn.execute("SELECT COUNT(*) FROM UVAS")
+    messagebox.showinfo("Base Datos",
+                        "Base de datos creada correctamente \nHay " + str(cursor.fetchone()[0]) + " vinos y "
+                        +str(cursor1.fetchone()[0]) + " tipos de uvas")
+    conn.close()
         
         
    
   
 
 if __name__ == '__main__':
-    almacenar_bd()
+    ventana_principal()()
