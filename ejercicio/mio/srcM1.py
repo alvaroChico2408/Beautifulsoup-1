@@ -35,7 +35,7 @@ def ventana_principal():
 
     # BUSCAR
     menubuscar = Menu(menu, tearoff=0)
-    menubuscar.add_command(label="Título", command=raiz.quit)
+    menubuscar.add_command(label="Denominación", command=buscar_denominacion)
     menubuscar.add_command(label="Fecha", command=raiz.quit)
     menubuscar.add_command(label="Géneros", command=raiz.quit)
     menu.add_cascade(label="Buscar", menu=menubuscar)
@@ -134,6 +134,30 @@ def formato_vinos(cursor):
         lb.insert(END, "\n\n")
     lb.pack(side=LEFT, fill=BOTH)
     sc.config(command=lb.yview)
+    
+    
+    
+def buscar_denominacion():
+
+    def lista(event):
+            conn = sqlite3.connect('vinos.db')
+            conn.text_factory = str
+            cursor = conn.execute("SELECT NOMBRE, PRECIO, BODEGA, DENOMINACION FROM VINO WHERE DENOMINACION = '" + sb.get() + "'")
+            conn.close
+            formato_vinos(cursor)
+    
+    conn = sqlite3.connect('vinos.db')
+    conn.text_factory = str
+    cursor = conn.execute("SELECT DISTINCT DENOMINACION FROM VINO")
+    
+    denominaciones = [i[0] for i in cursor]
+        
+    v = Toplevel()
+    sb = Spinbox(v, values=denominaciones)
+    sb.bind("<Return>", lista)
+    sb.pack()
+    
+    conn.close()
   
 
 if __name__ == '__main__':
