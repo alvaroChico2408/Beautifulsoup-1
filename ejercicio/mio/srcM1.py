@@ -36,7 +36,7 @@ def ventana_principal():
     # BUSCAR
     menubuscar = Menu(menu, tearoff=0)
     menubuscar.add_command(label="Denominación", command=buscar_denominacion)
-    menubuscar.add_command(label="Fecha", command=raiz.quit)
+    menubuscar.add_command(label="Precio", command=buscar_precio)
     menubuscar.add_command(label="Géneros", command=raiz.quit)
     menu.add_cascade(label="Buscar", menu=menubuscar)
 
@@ -136,7 +136,6 @@ def formato_vinos(cursor):
     sc.config(command=lb.yview)
     
     
-    
 def buscar_denominacion():
 
     def lista(event):
@@ -158,6 +157,23 @@ def buscar_denominacion():
     sb.pack()
     
     conn.close()
+
+    
+def buscar_precio():
+
+    def listar(event):
+            conn = sqlite3.connect('vinos.db')
+            conn.text_factory = str
+            cursor = conn.execute("SELECT NOMBRE, PRECIO, BODEGA, DENOMINACION FROM VINO WHERE PRECIO <= ? ORDER BY PRECIO", (str(entry.get()),))
+            conn.close
+            formato_vinos(cursor)
+
+    ventana = Toplevel()
+    label = Label(ventana, text="Indique el precio máximo: ")
+    label.pack(side=LEFT)
+    entry = Entry(ventana)
+    entry.bind("<Return>", listar)
+    entry.pack(side=LEFT)
   
 
 if __name__ == '__main__':
