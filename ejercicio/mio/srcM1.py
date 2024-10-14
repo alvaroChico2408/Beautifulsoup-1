@@ -21,7 +21,6 @@ getattr(ssl, '_create_unverified_context', None)):
 
 
 def ventana_principal():
-
   
     raiz = Tk()
 
@@ -29,8 +28,8 @@ def ventana_principal():
 
     # DATOS
     menudatos = Menu(menu, tearoff=0)
-    menudatos.add_command(label="Cargar", command=almacenar_bd)
-    menudatos.add_command(label="Listar", command=raiz.quit)
+    menudatos.add_command(label="Cargar", command=cargar)
+    menudatos.add_command(label="Listar", command=listar_vinos_completo)
     menudatos.add_command(label="Salir", command=raiz.quit)
     menu.add_cascade(label="Datos", menu=menudatos)
 
@@ -51,14 +50,15 @@ def cargar():
     if respuesta:
         almacenar_bd()
 
+
 def obtener_vinos_páginas():
-    lista= []
+    lista = []
     
-    for pag in range(0,3):
-        url= f'https://www.vinissimus.com/es/vinos/tinto/?cursor={pag*36}' 
+    for pag in range(0, 3):
+        url = f'https://www.vinissimus.com/es/vinos/tinto/?cursor={pag*36}' 
         f = urllib.request.urlopen(url)
         vinos = BeautifulSoup(f, "lxml")
-        lista_una_pagina= vinos.find_all("div", class_="product-list-item")
+        lista_una_pagina = vinos.find_all("div", class_="product-list-item")
         lista.extend(lista_una_pagina)
     
     return lista
@@ -80,19 +80,17 @@ def almacenar_bd():
        (NOMBRE            TEXT NOT NULL);''')
     
     tipos_uva = set()
-    lista_vinos= obtener_vinos_páginas()
+    lista_vinos = obtener_vinos_páginas()
     for vino in lista_vinos:
-        datos= vino.find("div",class_="details")
-        nombre= datos.find("h2",class_="title heading").string.strip()
-        precio= vino.find("p",class_="dto small")
+        datos = vino.find("div", class_="details")
+        nombre = datos.find("h2", class_="title heading").string.strip()
+        precio = vino.find("p", class_="dto small")
         if precio is not None:
-            precio= list(precio.stripped_strings)[0]
+            precio = list(precio.stripped_strings)[0]
         else:
-            precio= list(vino.find("p",class_="price uniq small").stripped_strings)[0]
-        denominacion= datos.find("div",class_="region").string
-        partes= denominacion.split("(")
-        denominacion_buena= partes[0].strip()
-        bodega= datos.find("div",class_="cellar-name").string
+            precio = list(vino.find("p", class_="price uniq small").stripped_strings)[0]
+        denominacion = datos.find("div", class_="region").string.strip()
+        bodega = datos.find("div", class_="cellar-name").string.strip()
         uvas = "".join(datos.find("div", class_=["tags"]).stripped_strings)
         for uva in uvas.split("/"):
             tipos_uva.add(uva.strip())
@@ -112,10 +110,31 @@ def almacenar_bd():
                         "Base de datos creada correctamente \nHay " + str(cursor.fetchone()[0]) + " vinos y "
                         +str(cursor1.fetchone()[0]) + " tipos de uvas")
     conn.close()
-        
-        
-   
+
+
+def listar_vinos_completo():
+            conn = sqlite3.connect('vinos.db')
+            conn.text_factory = str
+            cursor = conn.execute("SELECT NOMBRE, PRECIO, BODEGA, DENOMINACION FROM VINO")
+            conn.close
+            formato_vinos(cursor)
+
+            
+def formato_vinos(cursor): 
+    v = Toplevel()
+    sc = Scrollbar(v)
+    sc.pack(side=RIGHT, fill=Y)
+    lb = Listbox(v, width=150, yscrollcommand=sc.set)
+    for row in cursor:
+        s = 'VINO: ' + row[0]
+        lb.insert(END, s)
+        lb.insert(END, "------------------------------------------------------------------------")
+        s = "     PRECIO: " + str(row[1]) + ' | BODEGA: ' + row[2] + ' | DENOMINACION: ' + str(row[3])
+        lb.insert(END, s)
+        lb.insert(END, "\n\n")
+    lb.pack(side=LEFT, fill=BOTH)
+    sc.config(command=lb.yview)
   
 
 if __name__ == '__main__':
-    ventana_principal()()
+    ventana_principal()
